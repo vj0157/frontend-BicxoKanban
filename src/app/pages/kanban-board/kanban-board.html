@@ -1,0 +1,221 @@
+<div class="min-h-screen bg-gray-100">
+  <div class="mx-auto max-w-7xl px-4 py-6">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <h1 class="text-4xl font-bold text-gray-800">Kanban Board</h1>
+
+      <button (click)="openDialog()" class="rounded-lg bg-blue-600 px-6 py-3 text-white">
+        + Add Task
+      </button>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Search -->
+      <input
+        type="text"
+        placeholder="Search tasks..."
+        [(ngModel)]="searchText"
+        name="searchText"
+        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+      />
+
+      <!-- Filter -->
+      <select
+        [(ngModel)]="selectedPriority"
+        name="selectedPriority"
+        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+      >
+        <option value="All">All Priority</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+    </div>
+
+    @if (showForm) {
+      <div class="mt-6 rounded-xl bg-white p-6 shadow">
+        <h2 class="mb-5 text-2xl font-bold">Add New Task</h2>
+
+        <form [formGroup]="taskForm">
+          <div class="grid gap-4 md:grid-cols-2">
+            <input
+              formControlName="title"
+              type="text"
+              placeholder="Task Title"
+              class="rounded-lg border p-3"
+            />
+
+            <select formControlName="priority" class="rounded-lg border p-3">
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <textarea
+            formControlName="description"
+            rows="4"
+            placeholder="Description"
+            class="mt-4 w-full rounded-lg border p-3"
+          >
+          </textarea>
+
+          <div class="mt-5 flex justify-end">
+            <button
+              type="button"
+              (click)="createTask()"
+              class="rounded-lg bg-blue-600 px-6 py-3 text-white"
+            >
+              Save Task
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Kanban Board -->
+    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <!-- =================== TO DO =================== -->
+
+      <div class="rounded-xl bg-gray-200 p-5">
+        <!-- Column Header -->
+        <div class="mb-5 flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-gray-700">To Do</h2>
+
+          <span class="rounded-full bg-white px-3 py-1 text-sm font-semibold shadow">
+            {{ filteredTodoTasks.length }}
+          </span>
+        </div>
+
+        <!-- Drop Zone -->
+        <div
+          cdkDropList
+          id="todo"
+          [cdkDropListData]="todoTasks"
+          [cdkDropListConnectedTo]="['progress', 'done']"
+          (cdkDropListDropped)="drop($event, 'To Do')"
+          class="space-y-4 min-h-[162.5] rounded-xl"
+        >
+          @for (task of filteredTodoTasks; track task.id) {
+            <!-- Draggable Card -->
+            <div
+              cdkDrag
+              class="cursor-move rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-lg"
+            >
+              <div class="flex justify-between">
+                <h3 class="text-lg font-semibold">
+                  {{ task.title }}
+                </h3>
+
+                <button class="text-gray-400 hover:text-blue-600">✏️</button>
+              </div>
+
+              <p class="mt-3 text-sm text-gray-500">
+                {{ task.description }}
+              </p>
+
+              <div class="mt-4 flex items-center justify-between">
+                <span class="rounded-full bg-red-100 px-3 py-1 text-xs text-red-600">
+                  {{ task.priority }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- =================== IN PROGRESS =================== -->
+
+      <div class="rounded-xl bg-gray-200 p-5 min-h-[162.5]">
+        <div class="mb-5 flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-gray-700">In Progress</h2>
+
+          <span class="rounded-full bg-white px-3 py-1 text-sm font-semibold shadow">
+            {{ filteredProgressTasks.length }}
+          </span>
+        </div>
+
+        <div
+          cdkDropList
+          id="progress"
+          [cdkDropListData]="progressTasks"
+          [cdkDropListConnectedTo]="['todo', 'done']"
+          (cdkDropListDropped)="drop($event, 'In Progress')"
+          class="space-y-4"
+        >
+          @for (task of filteredProgressTasks; track task.id) {
+            <div
+              cdkDrag
+              class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-lg"
+            >
+              <div class="flex justify-between">
+                <h3 class="font-semibold text-lg">
+                  {{ task.title }}
+                </h3>
+
+                <button class="text-gray-400 hover:text-blue-600">✏️</button>
+              </div>
+
+              <p class="mt-3 text-sm text-gray-500">
+                {{ task.description }}
+              </p>
+
+              <div class="mt-4 flex justify-between items-center">
+                <span class="rounded-full bg-red-100 text-red-600 px-3 py-1 text-xs">
+                  {{ task.priority }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- =================== DONE =================== -->
+
+      <div class="rounded-xl bg-gray-200 p-5 min-h-[162.5]">
+        <div class="mb-5 flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-gray-700">Done</h2>
+
+          <span class="rounded-full bg-white px-3 py-1 text-sm font-semibold shadow">
+            Test {{ filteredDoneTasks.length }}
+          </span>
+        </div>
+
+        <div
+          cdkDropList
+          id="done"
+          [cdkDropListData]="doneTasks"
+          [cdkDropListConnectedTo]="['todo', 'progress']"
+          (cdkDropListDropped)="drop($event, 'Done')"
+          class="space-y-4"
+        >
+          @for (task of filteredDoneTasks; track task.id) {
+            <div
+              cdkDrag
+              class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-lg"
+            >
+              <div class="flex justify-between">
+                <h3 class="font-semibold text-lg">
+                  {{ task.title }}
+                </h3>
+
+                <button class="text-gray-400 hover:text-blue-600">✏️</button>
+              </div>
+
+              <p class="mt-3 text-sm text-gray-500">
+                {{ task.description }}
+              </p>
+
+              <div class="mt-4 flex justify-between items-center">
+                <span class="rounded-full bg-red-100 text-red-600 px-3 py-1 text-xs">
+                  {{ task.priority }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
